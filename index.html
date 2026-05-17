@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comment fonctionne mon Graphify ?</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.6; }
+
+  header { text-align: center; padding: 48px 24px 32px; }
+  header h1 { font-size: 2.2rem; color: #cba6f7; margin-bottom: 8px; }
+  header p { color: #a6adc8; font-size: 1.05rem; }
+
+  .section { max-width: 860px; margin: 0 auto 56px; padding: 0 24px; }
+  .section h2 { font-size: 1.3rem; color: #89b4fa; margin-bottom: 20px; border-left: 4px solid #89b4fa; padding-left: 12px; }
+
+  /* DAG ABSOLU */
+  .dag { display: flex; flex-direction: column; gap: 0; align-items: center; }
+  .dag-row { display: flex; align-items: center; gap: 0; width: 100%; }
+  .dag-node {
+    background: #313244; border: 2px solid #45475a; border-radius: 14px;
+    padding: 16px 20px; flex: 1; text-align: center;
+  }
+  .dag-node .emoji { font-size: 2rem; display: block; margin-bottom: 6px; }
+  .dag-node .label { font-weight: 700; color: #cba6f7; font-size: 0.95rem; }
+  .dag-node .desc { color: #a6adc8; font-size: 0.82rem; margin-top: 4px; }
+  .dag-arrow { text-align: center; color: #6c7086; font-size: 1.4rem; padding: 6px 0; width: 100%; }
+  .dag-arrow.split { display: flex; justify-content: space-around; font-size: 1.2rem; }
+
+  /* PUNCHLINE */
+  .punchline {
+    background: #181825; border-left: 4px solid #f38ba8;
+    border-radius: 0 12px 12px 0; padding: 16px 20px; margin: 12px 0;
+  }
+  .punchline .title { color: #f38ba8; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .punchline .text { color: #cdd6f4; font-size: 0.95rem; }
+
+  /* GRAPH VIZ */
+  .graph-viz { background: #181825; border-radius: 16px; padding: 32px; }
+  .communities { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .community {
+    background: #313244; border-radius: 12px; padding: 16px;
+    border-top: 3px solid;
+  }
+  .community:nth-child(1) { border-color: #cba6f7; }
+  .community:nth-child(2) { border-color: #89b4fa; }
+  .community:nth-child(3) { border-color: #a6e3a1; }
+  .community:nth-child(4) { border-color: #fab387; }
+  .community:nth-child(5) { border-color: #f38ba8; }
+  .community:nth-child(6) { border-color: #94e2d5; }
+  .community:nth-child(7) { border-color: #f9e2af; }
+  .community h4 { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; color: #a6adc8; }
+  .node-pill {
+    background: #1e1e2e; border-radius: 6px; padding: 4px 8px;
+    font-size: 0.78rem; color: #cdd6f4; margin: 3px 0; display: block;
+  }
+
+  /* COMMENT ENRICHIR */
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step { display: flex; gap: 16px; align-items: flex-start; background: #313244; border-radius: 12px; padding: 16px; }
+  .step .num { background: #cba6f7; color: #1e1e2e; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0; }
+  .step .content .title { font-weight: 700; color: #cba6f7; margin-bottom: 4px; }
+  .step .content .desc { color: #a6adc8; font-size: 0.88rem; }
+  .step code { background: #1e1e2e; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85rem; color: #a6e3a1; }
+
+  /* STATS */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .stat { background: #313244; border-radius: 12px; padding: 20px; text-align: center; }
+  .stat .num { font-size: 2.4rem; font-weight: 800; color: #cba6f7; }
+  .stat .label { color: #a6adc8; font-size: 0.85rem; margin-top: 4px; }
+
+  footer { text-align: center; padding: 32px; color: #585b70; font-size: 0.82rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧠 Comment fonctionne mon Graphify ?</h1>
+  <p>Le DAG absolu — simple comme bonjour</p>
+</header>
+
+<!-- STATS -->
+<div class="section">
+  <h2>📊 Ton graphe aujourd'hui</h2>
+  <div class="stats">
+    <div class="stat"><div class="num">52</div><div class="label">Nœuds (concepts)</div></div>
+    <div class="stat"><div class="num">7</div><div class="label">Communautés</div></div>
+    <div class="stat"><div class="num">0</div><div class="label">Edges (à construire)</div></div>
+  </div>
+  <div class="punchline" style="margin-top:16px;">
+    <div class="title">⚠️ Punchline</div>
+    <div class="text">Tu as 52 concepts isolés. Zéro lien entre eux. Graphify a détecté les clusters mais n'a pas encore relié les nœuds. C'est le chantier.</div>
+  </div>
+</div>
+
+<!-- DAG PIPELINE -->
+<div class="section">
+  <h2>⚡ Le pipeline Graphify — DAG absolu</h2>
+
+  <div class="dag">
+
+    <div class="dag-row">
+      <div class="dag-node">
+        <span class="emoji">📁</span>
+        <span class="label">Tes fichiers</span>
+        <span class="desc">Docs, notes Obsidian, code, PDFs, vidéos — tout ce que tu as dans un dossier</span>
+      </div>
+    </div>
+
+    <div class="dag-arrow">↓ graphify lit tout</div>
+
+    <div class="dag-row">
+      <div class="dag-node">
+        <span class="emoji">🔍</span>
+        <span class="label">Extraction</span>
+        <span class="desc">Claude lit chaque fichier et extrait les concepts clés (EXTRACTED) + devine les liens implicites (INFERRED)</span>
+      </div>
+    </div>
+
+    <div class="dag-arrow">↓ on structure</div>
+
+    <div class="dag-row">
+      <div class="dag-node">
+        <span class="emoji">🕸️</span>
+        <span class="label">Graphe de connaissances</span>
+        <span class="desc">Chaque concept = un nœud. Chaque lien = une edge. Tout ça stocké dans graph.json</span>
+      </div>
+    </div>
+
+    <div class="dag-arrow">↓ algo de clustering</div>
+
+    <div class="dag-row">
+      <div class="dag-node">
+        <span class="emoji">🌈</span>
+        <span class="label">Communautés détectées</span>
+        <span class="desc">L'algo regroupe les nœuds proches en clusters thématiques automatiquement</span>
+      </div>
+    </div>
+
+    <div class="dag-arrow split">
+      <span>↙ graph.html</span>
+      <span>↓ graph.json</span>
+      <span>↘ GRAPH_REPORT.md</span>
+    </div>
+
+    <div class="dag-row" style="gap:12px;">
+      <div class="dag-node">
+        <span class="emoji">🎨</span>
+        <span class="label">HTML interactif</span>
+        <span class="desc">Tu vois ton graphe, tu cliques, tu navigues</span>
+      </div>
+      <div class="dag-node">
+        <span class="emoji">🗃️</span>
+        <span class="label">JSON structuré</span>
+        <span class="desc">Interrogeable par Claude, MCP, agents IA</span>
+      </div>
+      <div class="dag-node">
+        <span class="emoji">📝</span>
+        <span class="label">Rapport texte</span>
+        <span class="desc">Résumé lisible des clusters et connexions</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="punchline" style="margin-top:24px;">
+    <div class="title">🎯 Punchline</div>
+    <div class="text">Graphify = ton cerveau externalisé. Tu mets tes connaissances en vrac, il les structure en réseau interrogeable. Claude peut ensuite <em>naviguer</em> ce réseau pour répondre à tes questions.</div>
+  </div>
+</div>
+
+<!-- TES 7 COMMUNAUTES -->
+<div class="section">
+  <h2>🌈 Tes 7 communautés actuelles</h2>
+  <div class="graph-viz">
+    <div class="communities">
+      <div class="community">
+        <h4>🟣 Épistémologie Yanis</h4>
+        <span class="node-pill">Dette d'Intention</span>
+        <span class="node-pill">Nilpotence Cognitive</span>
+        <span class="node-pill">Incompressibilité Humaine</span>
+        <span class="node-pill">Géométrie de la Révélation</span>
+        <span class="node-pill">Étalon Divin</span>
+        <span class="node-pill">+7 autres</span>
+      </div>
+      <div class="community">
+        <h4>🔵 Architecture SE</h4>
+        <span class="node-pill">Structure DDD Ontologique</span>
+        <span class="node-pill">Division Cognitive AMOA/Dev</span>
+        <span class="node-pill">Paradigmes Triangle Fermé</span>
+        <span class="node-pill">Volatilité Code 3 Classes</span>
+        <span class="node-pill">+5 autres</span>
+      </div>
+      <div class="community">
+        <h4>🟢 Protocoles Nilpotence</h4>
+        <span class="node-pill">Chaîne Nilpotente Documentaire</span>
+        <span class="node-pill">Protocole Spec Solo</span>
+        <span class="node-pill">N1 → N2 → N3 → N4</span>
+        <span class="node-pill">Team Charter</span>
+        <span class="node-pill">+5 autres</span>
+      </div>
+      <div class="community">
+        <h4>🟠 Repo & Ontologie</h4>
+        <span class="node-pill">Repo d'Intention</span>
+        <span class="node-pill">Isomorphisme Unix/Agentique</span>
+        <span class="node-pill">Attracteur Global</span>
+        <span class="node-pill">Design Patterns (14)</span>
+        <span class="node-pill">+4 autres</span>
+      </div>
+      <div class="community">
+        <h4>🔴 Pipeline DAG</h4>
+        <span class="node-pill">DAG Absolu</span>
+        <span class="node-pill">Pipeline DAG</span>
+        <span class="node-pill">Filtre de Fourier Org.</span>
+        <span class="node-pill">Hégémonie Sémantique</span>
+        <span class="node-pill">+2 autres</span>
+      </div>
+      <div class="community">
+        <h4>🩵 Patterns Lecture</h4>
+        <span class="node-pill">DAG — Notation Emoji</span>
+        <span class="node-pill">CQRS Read/Write</span>
+        <span class="node-pill">Décodeur Ontologique</span>
+        <span class="node-pill">Pipeline Connaissance ELT</span>
+        <span class="node-pill">+2 autres</span>
+      </div>
+      <div class="community">
+        <h4>🟡 Résilience</h4>
+        <span class="node-pill">Invariant de Résilience</span>
+        <span class="node-pill">Zone 0 Géopolitique</span>
+      </div>
+    </div>
+  </div>
+  <div class="punchline" style="margin-top:16px;">
+    <div class="title">💡 Punchline</div>
+    <div class="text">Ces 7 clusters, c'est graphify qui les a inventés tout seul en lisant tes notes. Il a vu que "Nilpotence Cognitive" et "Protocoles N1→N4" parlaient de la même chose — sans que tu le lui dises.</div>
+  </div>
+</div>
+
+<!-- COMMENT ENRICHIR -->
+<div class="section">
+  <h2>➕ Comment enrichir ton graphify sans se tromper</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <div class="content">
+        <div class="title">Ajouter un fichier source</div>
+        <div class="desc">Pose ton fichier dans le dossier cible (ex: vault/2-CONCEPTS/), puis lance : <code>/graphify --update</code>. Graphify ne relit que ce qui est nouveau.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <div class="content">
+        <div class="title">Ajouter une URL (article, repo GitHub)</div>
+        <div class="desc"><code>/graphify add https://...</code> — graphify fetch, extrait les concepts, les ajoute au graphe existant. Zéro risque de casser l'existant.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <div class="content">
+        <div class="title">Vérifier avant de commit</div>
+        <div class="desc">Le fichier <code>graph.json</code> est la source de vérité. Avant d'enrichir, compte les nœuds (52 actuellement). Après enrichissement, vérifie que le nombre a augmenté.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">4</div>
+      <div class="content">
+        <div class="title">Interroger après</div>
+        <div class="desc"><code>/graphify query "nilpotence"</code> — Claude traverse le graphe (BFS) et te sort tous les concepts liés. C'est là que la magie opère.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="punchline" style="margin-top:16px;">
+    <div class="title">🚨 Le seul vrai risque</div>
+    <div class="text">Ajouter du bruit (fichiers non curatés, copy-paste en vrac). Graphify extrait ce qu'il trouve — si tu mets du flou, tu crées des faux nœuds. Règle : un fichier = une idée claire.</div>
+  </div>
+</div>
+
+<!-- CHANTIER -->
+<div class="section">
+  <h2>🏗️ Ton chantier : construire les edges</h2>
+  <div class="dag">
+    <div class="dag-row">
+      <div class="dag-node" style="border-color:#f38ba8;">
+        <span class="emoji">❌</span>
+        <span class="label">Aujourd'hui : 0 edges</span>
+        <span class="desc">Tes 52 concepts sont des îles. Graphify les a nommés mais n'a pas tracé les liens.</span>
+      </div>
+    </div>
+    <div class="dag-arrow">↓ solution</div>
+    <div class="dag-row">
+      <div class="dag-node" style="border-color:#a6e3a1;">
+        <span class="emoji">✅</span>
+        <span class="label">Lancer /graphify --mode deep</span>
+        <span class="desc">Mode deep = Claude essaie d'inférer les liens entre nœuds (INFERRED edges). Plus lent, plus riche.</span>
+      </div>
+    </div>
+  </div>
+  <div class="punchline" style="margin-top:16px;">
+    <div class="title">🎯 Next step concret</div>
+    <div class="text">Lance <code>/graphify G:\Mon Drive\10 - Claude\vault\2 - CONCEPTS --mode deep</code> pour que graphify relie tes 52 nœuds entre eux. Résultat = ton graphe devient interrogeable pour de vrai.</div>
+  </div>
+</div>
+
+<!-- LAUNCHER -->
+<div class="section">
+  <h2>🚀 Lancer le transformer</h2>
+
+  <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:16px; margin-bottom:20px;">
+
+    <button class="launch-btn" id="btn-dry" onclick="runCmd('dry')">
+      <span style="font-size:2rem;">👁️</span>
+      <span class="btn-title">Prévisualiser</span>
+      <span class="btn-desc">J'ai bossé avec Claude aujourd'hui, combien de nouveaux trucs il a retenus ?</span>
+      <span class="btn-use">Zéro risque — rien n'est modifié.</span>
+      <span class="btn-cmd">python -X utf8 transformer.py</span>
+    </button>
+
+    <button class="launch-btn enrich" id="btn-write" onclick="runCmd('write')">
+      <span style="font-size:2rem;">⚡</span>
+      <span class="btn-title">Ajouter mes sessions au graphe</span>
+      <span class="btn-desc">OK je veux que ce que Claude a appris sur moi soit dans ma carte de connaissances.</span>
+      <span class="btn-use">À faire en fin de session ou une fois par semaine.</span>
+      <span class="btn-cmd">python -X utf8 transformer.py --write</span>
+    </button>
+
+    <button class="launch-btn test" id="btn-test" onclick="runCmd('test')">
+      <span style="font-size:2rem;">✅</span>
+      <span class="btn-title">Tout est bien branché ?</span>
+      <span class="btn-desc">J'ai changé un fichier, déplacé un dossier, ou je reviens après 2 semaines — est-ce que le pipeline marche encore ?</span>
+      <span class="btn-use">Uniquement quand tu doutes que quelque chose ait cassé.</span>
+      <span class="btn-cmd">python -X utf8 test_transformer.py</span>
+    </button>
+
+  </div>
+
+  <!-- FEEDBACK -->
+  <div id="feedback-box" style="display:none; margin-top:4px; border-radius:12px; overflow:hidden;">
+    <div id="feedback-step" class="feedback-step"></div>
+    <div id="feedback-cmd"  class="feedback-cmd"></div>
+    <div id="feedback-next" class="feedback-next"></div>
+  </div>
+
+  <div class="punchline" style="margin-top:16px;">
+    <div class="title">💡 Alternative</div>
+    <div class="text">Double-clique directement sur les fichiers .bat dans <code>transformer\</code> — <code>1-dry-run.bat</code> · <code>2-enrich-graph.bat</code> · <code>3-run-tests.bat</code></div>
+  </div>
+</div>
+
+<style>
+  .launch-btn {
+    background: #313244; border: 2px solid #45475a; border-radius: 16px;
+    padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+    cursor: pointer; transition: all 0.15s; color: #cdd6f4; text-align: center;
+  }
+  .launch-btn:hover  { border-color: #cba6f7; background: #3d3d52; transform: translateY(-2px); }
+  .launch-btn:active { transform: translateY(0); }
+  .launch-btn.enrich { border-color: #a6e3a1; }
+  .launch-btn.enrich:hover { background: #2a3a2a; border-color: #a6e3a1; }
+  .launch-btn.test   { border-color: #89b4fa; }
+  .launch-btn.test:hover   { background: #1e2a3a; border-color: #89b4fa; }
+  .launch-btn.active-flash { border-color: #cba6f7 !important; background: #3a2a4a !important; }
+
+  .btn-title { font-weight: 700; font-size: 1rem; color: #cba6f7; }
+  .launch-btn.enrich .btn-title { color: #a6e3a1; }
+  .launch-btn.test   .btn-title { color: #89b4fa; }
+  .btn-desc { font-size: 0.8rem; color: #a6adc8; margin-bottom: 2px; }
+  .btn-use  { font-size: 0.75rem; color: #6c7086; font-style: italic; }
+  .btn-cmd  { font-family: monospace; font-size: 0.72rem; color: #45475a; background: #11111b; padding: 5px 10px; border-radius: 6px; margin-top: 4px; word-break: break-all; }
+
+  .feedback-step {
+    background: #181825; padding: 14px 18px;
+    font-size: 0.88rem; color: #cdd6f4; border-bottom: 1px solid #313244;
+  }
+  .feedback-cmd {
+    background: #11111b; padding: 12px 18px;
+    font-family: monospace; font-size: 0.82rem; color: #a6e3a1; word-break: break-all;
+  }
+  .feedback-next {
+    background: #181825; padding: 12px 18px;
+    font-size: 0.82rem; color: #6c7086; font-style: italic;
+  }
+</style>
+
+<script>
+const TRANSFORMER = String.raw`G:\Mon Drive\10 - Claude\projects\Claire\transformer`;
+const CMDS = {
+  dry:   `python -X utf8 "${TRANSFORMER}\\transformer.py"`,
+  write: `python -X utf8 "${TRANSFORMER}\\transformer.py" --write`,
+  test:  `python -X utf8 "${TRANSFORMER}\\test_transformer.py"`,
+};
+const META = {
+  dry:   { btnId: 'btn-dry',   step: 'Ouvre PowerShell  (Win + R  →  powershell)', next: 'Colle avec Ctrl+V et appuie sur Entrée — tu verras combien de concepts seraient ajoutés, sans rien modifier.' },
+  write: { btnId: 'btn-write', step: 'Ouvre PowerShell  (Win + R  →  powershell)', next: 'Colle avec Ctrl+V et appuie sur Entrée — ton graphe sera enrichi en quelques secondes.' },
+  test:  { btnId: 'btn-test',  step: 'Ouvre PowerShell  (Win + R  →  powershell)', next: 'Colle avec Ctrl+V et appuie sur Entrée — tu dois voir 8/8 PASS si tout est OK.' },
+};
+
+let resetTimer = null;
+
+function runCmd(type) {
+  const cmd  = CMDS[type];
+  const meta = META[type];
+
+  navigator.clipboard.writeText(cmd).catch(() => {});
+
+  // Flash du bouton cliqué
+  const btn = document.getElementById(meta.btnId);
+  btn.classList.add('active-flash');
+  if (resetTimer) clearTimeout(resetTimer);
+  resetTimer = setTimeout(() => btn.classList.remove('active-flash'), 1800);
+
+  // Panneau feedback
+  document.getElementById('feedback-step').innerHTML = '<strong>1.</strong> ' + meta.step;
+  document.getElementById('feedback-cmd').textContent  = '> ' + cmd;
+  document.getElementById('feedback-next').textContent  = '2. ' + meta.next;
+  const box = document.getElementById('feedback-box');
+  box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+
+<footer>Généré le 2026-05-17 · Session Claire · graphify-explainer.html</footer>
+
+</body>
+</html>
